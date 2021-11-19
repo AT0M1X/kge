@@ -10,7 +10,7 @@ setup(
     packages=["kge"],
     install_requires=[
         "numpy==1.19.*",
-        "torch==1.7.1",
+        "torch==1.8.1",
         "pyyaml",
         "pandas",
         "argparse",
