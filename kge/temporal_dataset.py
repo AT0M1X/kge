@@ -154,11 +154,6 @@ class TemporalDataset(Dataset):
         copy.index_functions = self.index_functions
         return copy
 
-    def index(self, key: str) -> Any:
-        raise NotImplementedError(
-            "Something tried to use the index method on TemporalDataset."
-        )
-
     def timestamp_ids(
         self, indexes: Optional[Union[int, Tensor]] = None
     ) -> Union[str, List[str], np.ndarray]:
