@@ -1,0 +1,22 @@
+diachronic_embedder:
+  class_name: DiachronicEmbedder
+  dim: 100
+  initialize: xavier_uniform_
+  initialize_args:
+    +++: +++
+  pretrain:
+      model_filename: "" 
+      ensure_all: False
+  dropout: 0.
+  normalize:
+    p: -1.
+  regularize: 'lp'
+  regularize_weight: 0.0
+  regularize_args:
+    weighted: False.
+    p: 2
+    +++: +++
+  sparse: False
+  round_dim_to: []
+  se_prop: 0.36
+  time_size: 365

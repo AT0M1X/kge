@@ -364,7 +364,85 @@ negative_sampling:
     implementation: fast_if_available
 
   # Whether to share the s/p/o corruptions for all triples in the batch. This
-  # can make training more efficient. Cannot be used with together with
+  # can make training more efficient. Cannot be used together with
+  # filtering, but it is ensured that each triple does not get itself as a
+  # negative.
+  shared: False
+
+  # Type of shared sampling implementation:
+  #
+  # - naive: Each positive triples uses exactly the same set of shared samples,
+  #          even if it's own positive entity is in the shared sample as a
+  #          negative. Very fast.
+  # - default: Avoid that a positive triple's entity occurs in its shared
+  #            negative samples. This is done by using a shared sample size that
+  #            is one sample larger then needed. The actual sample of a triple
+  #            is then obtained by dropping the sample corresponding to its
+  #            positive entity (or a random one if there is no such sample).
+  shared_type: 'default'
+
+  # Whether sampling should be performed with replacement. Without replacement
+  # sampling is currently only supported for shared sampling.
+  with_replacement: True
+
+  # Implementation to use for the negative sampling job. Possible values are:
+  # - triple: Scores every positive and negative triple in the batch separately.
+  # - all   : Scores against all possible targets and filters relevant scores
+  #           out of the resulting score matrix
+  # - batch : Scores against all targets contained in batch (or chunk) and
+  #           filters relevant scores out of the resulting score matrix.
+  # - auto  : Chooses best implementation heuristically. The heuristic may
+  #           change in the future.
+  #
+  # 'batch' is recommended (faster) for models which have efficient
+  # implementations to score many targets at once. For all other models, use
+  # 'triple' (e.g., for TransE or RotatE in the current implementation). 'auto'
+  # tries to do just this heuristically.
+  implementation: auto
+
+# Options for negative sampling training (train.type=="negative_sampling")
+temporal_negative_sampling:
+  class_name: TemporalTrainingJobNegativeSampling
+
+  # Negative sampler to use
+  # - uniform  : samples entities/relations for corruption uniformly from the set
+  #              of entities/relations
+  # - frequency: samples entities/relations for corruption based on their relative
+  #              frequency in the corresponding slot in the training data
+  sampling_type: uniform
+
+  # Options for sampling type frequency (negative_sampling.sampling_type=="frequency")
+  frequency:
+    # Smoothing constant to add to frequencies in training data (disable with
+    # 0). Corresponds to a symmetric Dirichlet prior.
+    smoothing: 1
+
+  # Number of times each slot of each positive triple is corrupted by the
+  # sampler to obtain negative triples.
+  num_samples:
+    s: 3
+    p: 0          # -1 means: same as s
+    o: -1
+    t: 0         # -1 means: same as s
+
+  # Whether to resample corrupted triples that occur in the training data (and
+  # are hence positives). Can be set separately for each slot.
+  filtering:
+    s: False       # filter and resample for slot s
+    p: False       # as above
+    o: False       # as above
+    t: False
+
+    split: ''      # split containing the positives; default is train.split
+
+    # Implementation to use for filtering.
+    # standard: use slow generic implementation, available for all samplers
+    # fast: use specialized fast implementation, available for some samplers
+    # fast_if_available: use fast implementation if available, else standard
+    implementation: fast_if_available
+
+  # Whether to share the s/p/o corruptions for all triples in the batch. This
+  # can make training more efficient. Cannot be used together with
   # filtering, but it is ensured that each triple does not get itself as a
   # negative.
   shared: False

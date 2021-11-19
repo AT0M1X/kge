@@ -10,6 +10,7 @@ from kge import Dataset
 from kge import Config
 from kge.job import Job
 from kge.misc import get_git_revision_short_hash, kge_base_dir, is_number
+from kge.temporal_dataset import TemporalDataset
 from kge.util.dump import add_dump_parsers, dump
 from kge.util.io import get_checkpoint_file, load_checkpoint
 from kge.util.package import package_model, add_package_parser
@@ -193,7 +194,7 @@ def main():
             args.config += "/config.yaml"
         if not vars(args)["console.quiet"]:
             print("Resuming from configuration {}...".format(args.config))
-        config.load(args.config)
+        config.load(args.config, create=True)
         config.folder = os.path.dirname(args.config)
         if not config.folder:
             config.folder = "."
@@ -264,7 +265,10 @@ def main():
             config.log("Job created successfully.")
         else:
             # load data
-            dataset = Dataset.create(config)
+            if config.get("dataset.name") == "icews14":
+                dataset = TemporalDataset.create(config)
+            else:
+                dataset = Dataset.create(config)
 
             # let's go
             if args.command == "resume":

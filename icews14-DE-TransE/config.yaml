@@ -1,0 +1,30 @@
+model: de_transe
+dataset:
+  name: icews14
+temporal_negative_sampling:
+  implementation: triple
+  num_samples:
+    o: 1000
+    p: 0
+    s: 1000
+    t: 0
+train:
+  auto_correct: true
+  batch_size: 512
+  lr_scheduler: ReduceLROnPlateau
+  lr_scheduler_args:
+    factor: 0.95
+    mode: max
+    patience: 7
+    threshold: 0.0001
+  max_epochs: 500
+  optimizer_args:
+    lr: 0.01
+  type: temporal_negative_sampling
+valid:
+  early_stopping:
+    min_threshold:
+      epochs: 50
+      metric_value: 0.05
+    patience: 10
+

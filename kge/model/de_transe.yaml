@@ -1,0 +1,11 @@
+import: [lookup_embedder, diachronic_embedder]
+
+de_transe:
+  class_name: DETransE
+  entity_embedder:
+    type: diachronic_embedder
+    +++: +++
+  relation_embedder:
+    type: lookup_embedder
+    +++: +++
+  l_norm: 1.
