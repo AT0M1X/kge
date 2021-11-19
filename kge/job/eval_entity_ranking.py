@@ -10,7 +10,7 @@ from collections import defaultdict
 
 
 class EntityRankingJob(EvaluationJob):
-    """ Entity ranking evaluation protocol """
+    """Entity ranking evaluation protocol"""
 
     def __init__(self, config: Config, dataset: Dataset, parent_job, model):
         super().__init__(config, dataset, parent_job, model)
@@ -161,7 +161,7 @@ class EntityRankingJob(EvaluationJob):
             # entries are either 0 (false) or infinity (true)
             # TODO add timing information
             batch = batch_coords[0].to(self.device)
-            s, p, o = batch[:, 0], batch[:, 1], batch[:, 2]
+            s, p, o, t = batch[:, 0], batch[:, 1], batch[:, 2], batch[:, 3]
             label_coords = batch_coords[1].to(self.device)
             if filter_with_test:
                 test_label_coords = batch_coords[2].to(self.device)
@@ -191,13 +191,13 @@ class EntityRankingJob(EvaluationJob):
             # further evaluation.
             unique_o, unique_o_inverse = torch.unique(o, return_inverse=True)
             o_true_scores = torch.gather(
-                self.model.score_sp(s, p, unique_o),
+                self.model.score_sp(s, p, unique_o, t),
                 1,
                 unique_o_inverse.view(-1, 1),
             ).view(-1)
             unique_s, unique_s_inverse = torch.unique(s, return_inverse=True)
             s_true_scores = torch.gather(
-                self.model.score_po(p, o, unique_s),
+                self.model.score_po(p, o, unique_s, t),
                 1,
                 unique_s_inverse.view(-1, 1),
             ).view(-1)
@@ -225,7 +225,7 @@ class EntityRankingJob(EvaluationJob):
 
                 # compute scores of chunk
                 scores = self.model.score_sp_po(
-                    s, p, o, torch.arange(chunk_start, chunk_end, device=self.device)
+                    s, p, o, t, torch.arange(chunk_start, chunk_end, device=self.device)
                 )
                 scores_sp = scores[:, : chunk_end - chunk_start]
                 scores_po = scores[:, chunk_end - chunk_start :]
@@ -483,7 +483,11 @@ class EntityRankingJob(EvaluationJob):
 
         # update trace with results
         self.current_trace["epoch"].update(
-            dict(epoch_time=epoch_time, event="eval_completed", **metrics,)
+            dict(
+                epoch_time=epoch_time,
+                event="eval_completed",
+                **metrics,
+            )
         )
 
     def _densify_chunk_of_labels(
@@ -539,22 +543,22 @@ class EntityRankingJob(EvaluationJob):
         s_true_scores: torch.Tensor,
     ):
         """Filters the current examples with the given labels and returns counts rank and
-num_ties for each true score.
+        num_ties for each true score.
 
-        :param scores_sp: batch_size x chunk_size tensor of scores
+                :param scores_sp: batch_size x chunk_size tensor of scores
 
-        :param scores_po: batch_size x chunk_size tensor of scores
+                :param scores_po: batch_size x chunk_size tensor of scores
 
-        :param labels: batch_size x 2*chunk_size tensor of scores
+                :param labels: batch_size x 2*chunk_size tensor of scores
 
-        :param o_true_scores: batch_size x 1 tensor containing the scores of the actual
-        objects in batch
+                :param o_true_scores: batch_size x 1 tensor containing the scores of the actual
+                objects in batch
 
-        :param s_true_scores: batch_size x 1 tensor containing the scores of the actual
-        subjects in batch
+                :param s_true_scores: batch_size x 1 tensor containing the scores of the actual
+                subjects in batch
 
-        :return: batch_size x 1 tensors rank and num_ties for s and o and filtered
-        scores_sp and scores_po
+                :return: batch_size x 1 tensors rank and num_ties for s and o and filtered
+                scores_sp and scores_po
 
         """
         chunk_size = scores_sp.shape[1]
